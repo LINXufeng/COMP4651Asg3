@@ -3,6 +3,7 @@ package hk.ust.comp4651;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -43,7 +44,7 @@ public class BigramCountPairs extends Configured implements Tool {
 		// Reuse objects to save overhead of object creation.
 		private static final IntWritable ONE = new IntWritable(1);
 		private static final PairOfStrings BIGRAM = new PairOfStrings();
-
+		
 		@Override
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
@@ -53,14 +54,25 @@ public class BigramCountPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here
 			 */
-			for (int i = 0; i < words.length - 1; ++i) {
-				if (words[i].length() != 0) {
-					BIGRAM.set(words[i], words[i+1]);
-					context.write(BIGRAM, ONE);
+			for (int i = 0; i < words.length - 1; i++) {
+				// skip empty words
+				if (words[i].length() == 0)
+					continue;
+				
+				// loop to find the adjacent word
+				for (int j = i + 1; j < words.length; j++) {
+					// skip empty words
+					if (words[j].length() == 0)
+						continue;
+					else {
+						BIGRAM.set(words[i], words[j]);
+						context.write(BIGRAM, ONE);
+						break;
+					}
 				}
 			}
+			}
 		}
-	}
 
 	/*
 	 * Reducer: aggregate bigram counts
@@ -79,13 +91,13 @@ public class BigramCountPairs extends Configured implements Tool {
 			 * sequence of key-value pairs of <bigram, count>
 			 */
 			Iterator<IntWritable> iter = values.iterator();
-			int sum = 0;
-			while (iter.hasNext()) {
-				sum += iter.next().get();
-			}
-			SUM.set(sum);
+			SUM.set(0);
+			
+			while (iter.hasNext()) 
+				SUM.set(SUM.get()+ iter.next().get());
+			
 			context.write(key, SUM);
-		}
+			}
 	}
 
 	/*
