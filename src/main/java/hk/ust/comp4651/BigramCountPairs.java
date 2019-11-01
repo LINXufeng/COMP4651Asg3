@@ -53,7 +53,7 @@ public class BigramCountPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here
 			 */
-			for (int i = 0; i < words.length - 1; i++) {
+			for (int i = 0; i < words.length-1; ++i) {
 				if (words[i].length() == 0) {
 					continue;
 				}
