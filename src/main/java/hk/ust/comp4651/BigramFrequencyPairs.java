@@ -1,6 +1,7 @@
 package hk.ust.comp4651;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
@@ -30,10 +31,12 @@ import org.apache.log4j.Logger;
 
 /**
  * Compute the bigram count using "pairs" approach
+ * Refer to:
+ * https://github.com/nwihardjo/COMP4651/blob/master/assignment-3/src/main/java/hk/ust/comp4651/BigramFrequencyPairs.java
  */
 public class BigramFrequencyPairs extends Configured implements Tool {
 	private static final Logger LOG = Logger.getLogger(BigramFrequencyPairs.class);
-
+	private static IntWritable MARGINAL = new IntWritable();
 	/*
 	 * TODO: write your Mapper here
 	 */
@@ -53,6 +56,17 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			for (int i = 0; i < words.length - 1; i++) {
+				// skip empty words
+				if (words[i].length() == 0)
+					continue;
+				
+				BIGRAM.set(words[i], words[i + 1]);
+				context.write(BIGRAM, ONE);
+				// emit marginal count
+				BIGRAM.set(words[i], "");
+				context.write(BIGRAM, ONE);
+			}
 		}
 	}
 
@@ -64,13 +78,28 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 
 		// Reuse objects.
 		private final static FloatWritable VALUE = new FloatWritable();
-
+		
 		@Override
 		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
 				Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<IntWritable> iter = values.iterator();
+			VALUE.set(0);
+			
+			while(iter.hasNext())
+				VALUE.set(VALUE.get() + iter.next().get());
+			
+			if (key.getRightElement().toString().equals("")){
+				// set up marginal count for each word
+				MARGINAL.set((int) VALUE.get()); 
+				context.write(key, VALUE);
+			} else {
+				// count the frequency: # occurence / # marginal
+				VALUE.set(VALUE.get() / MARGINAL.get());
+				context.write(key, VALUE);
+			}
 		}
 	}
 	
@@ -84,6 +113,13 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<IntWritable> iter = values.iterator();
+			SUM.set(0);
+			
+			while (iter.hasNext())
+				SUM.set(SUM.get() + iter.next().get());
+				
+			context.write(key, SUM);
 		}
 	}
 
