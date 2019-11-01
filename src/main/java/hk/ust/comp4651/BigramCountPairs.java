@@ -53,13 +53,11 @@ public class BigramCountPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here
 			 */
-			for (int i = 0; i < words.length-1; ++i) {
-				if (words[i].length() == 0) {
-					continue;
+			for (int i = 0; i < words.length - 1; ++i) {
+				if (words[i].length() != 0) {
+					BIGRAM.set(words[i], words[i+1]);
+					context.write(BIGRAM, ONE);
 				}
-				
-				BIGRAM.set(words[i], words[i+1]);
-				context.write(BIGRAM, ONE);
 			}
 		}
 	}
